@@ -2,7 +2,7 @@ from tkinter import *
 from PIL import Image, ImageTk
 
 root = Tk()
-root.geometry('600x600')
+root.geometry('800x600')
 
 min_w = 50 # Minimum width of the frame
 max_w = 200 # Maximum width of the frame

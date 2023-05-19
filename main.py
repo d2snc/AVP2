@@ -34,7 +34,9 @@ class CanvasImage:
         self.__previous_state = 0  # previous state of the keyboard
         self.path = path  # path to the image, should be public for outer classes
         # Create ImageFrame in placeholder widget
-        self.__imframe = ttk.Frame(placeholder)  # placeholder of the ImageFrame object
+        #frame = Frame(root,bg='orange',width=50,height=root.winfo_height())
+
+        self.__imframe = ttk.Frame(placeholder,width=300)  # placeholder of the ImageFrame object
         # Vertical and horizontal scrollbars for canvas
         hbar = AutoScrollbar(self.__imframe, orient='horizontal')
         vbar = AutoScrollbar(self.__imframe, orient='vertical')
@@ -302,11 +304,12 @@ class MainWindow(ttk.Frame):
         """ Initialize the main Frame """
         ttk.Frame.__init__(self, master=mainframe)
         self.master.title('AVP-MOOS')
-        self.master.geometry('800x600')  # size of the main window
+        #self.master.geometry('800x600')  # size of the main window
+        #self.master.configure(bg='orange') #fundo azul marinho escuro
         self.master.rowconfigure(0, weight=1)  # make the CanvasImage widget expandable
         self.master.columnconfigure(0, weight=1)
         canvas = CanvasImage(self.master, path)  # create widget
-        canvas.grid(row=0, column=1)  # show widget
+        canvas.grid(row=0, column=1)  # adiciono widget lateralmente ao menu
 
 
 filename = '1511geotiff.tif'  # place path to your image here
@@ -316,7 +319,16 @@ filename = '1511geotiff.tif'  # place path to your image here
 #### Parte Lateral do Menu
 
 root = Tk()
-root.geometry('600x600')
+root.title("AVP-MOOS v0.1")
+root.geometry('1024x768')
+root.configure(bg='#01386a')
+
+#Weights de cada coluna para que o menu lateral fique fixo
+root.grid_columnconfigure(0, weight=1)
+root.grid_columnconfigure(1, weight=6)
+root.rowconfigure(1, weight=0)
+
+
 
 min_w = 50 # Minimum width of the frame
 max_w = 200 # Maximum width of the frame
@@ -361,13 +373,14 @@ settings = ImageTk.PhotoImage(Image.open('settings.png').resize((40,40),Image.AN
 ring = ImageTk.PhotoImage(Image.open('ring.png').resize((40,40),Image.ANTIALIAS))
 
 root.update() # For the width to get updated
-frame = Frame(root,bg='orange',width=50,height=root.winfo_height())
+frame = Frame(root,bg='#01386a',width=50,height=root.winfo_height())
 frame.grid(row=0,column=0) 
 
 # Make the buttons with the icons to be shown
-home_b = Button(frame,image=home,bg='orange',relief='flat')
-set_b = Button(frame,image=settings,bg='orange',relief='flat')
-ring_b = Button(frame,image=ring,bg='orange',relief='flat')
+home_b = Button(frame,image=home,bg='#01386a',relief='flat',highlightthickness=0)
+set_b = Button(frame,image=settings,bg='#01386a',relief='flat',highlightthickness=0)
+ring_b = Button(frame,image=ring,bg='#01386a',relief='flat',highlightthickness=0)
+
 
 # Put them on the frame
 home_b.grid(row=0,column=0,pady=10)
@@ -378,8 +391,13 @@ ring_b.grid(row=2,column=0)
 frame.bind('<Enter>',lambda e: expand())
 frame.bind('<Leave>',lambda e: contract())
 
+#Crio um novo frame
+
+canvas = CanvasImage(root, filename)
+canvas.grid(row=0, column=1)
+
+
 # So that it does not depend on the widgets inside the frame
 frame.grid_propagate(False)
 
-app = MainWindow(root, path=filename)
-app.mainloop()
+root.mainloop()
