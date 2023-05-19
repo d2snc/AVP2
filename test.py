@@ -1,70 +1,126 @@
-from tkinter import *
-from PIL import Image, ImageTk
+import sys
+import tkinter
+import tkinter.messagebox
+from tkintermapview import TkinterMapView
 
-root = Tk()
-root.geometry('800x600')
 
-min_w = 50 # Minimum width of the frame
-max_w = 200 # Maximum width of the frame
-cur_width = min_w # Increasing width of the frame
-expanded = False # Check if it is completely exanded
+class App(tkinter.Tk):
 
-def expand():
-    global cur_width, expanded
-    cur_width += 10 # Increase the width by 10
-    rep = root.after(5,expand) # Repeat this func every 5 ms
-    frame.config(width=cur_width) # Change the width to new increase width
-    if cur_width >= max_w: # If width is greater than maximum width 
-        expanded = True # Frame is expended
-        root.after_cancel(rep) # Stop repeating the func
-        fill()
+    APP_NAME = "map_view_demo.py"
+    WIDTH = 800
+    HEIGHT = 750
 
-def contract():
-    global cur_width, expanded
-    cur_width -= 10 # Reduce the width by 10 
-    rep = root.after(5,contract) # Call this func every 5 ms
-    frame.config(width=cur_width) # Change the width to new reduced width
-    if cur_width <= min_w: # If it is back to normal width
-        expanded = False # Frame is not expanded
-        root.after_cancel(rep) # Stop repeating the func
-        fill()
+    def __init__(self, *args, **kwargs):
+        tkinter.Tk.__init__(self, *args, **kwargs)
 
-def fill():
-    if expanded: # If the frame is exanded
-        # Show a text, and remove the image
-        home_b.config(text='Home',image='',font=(0,21))
-        set_b.config(text='Settings',image='',font=(0,21))
-        ring_b.config(text='Bell Icon',image='',font=(0,21))
-    else:
-        # Bring the image back
-        home_b.config(image=home,font=(0,21))
-        set_b.config(image=settings,font=(0,21))
-        ring_b.config(image=ring,font=(0,21))
+        self.title(self.APP_NAME)
+        self.geometry(f"{self.WIDTH}x{self.HEIGHT}")
 
-# Define the icons to be shown and resize it
-home = ImageTk.PhotoImage(Image.open('home.png').resize((40,40),Image.ANTIALIAS))
-settings = ImageTk.PhotoImage(Image.open('settings.png').resize((40,40),Image.ANTIALIAS))
-ring = ImageTk.PhotoImage(Image.open('ring.png').resize((40,40),Image.ANTIALIAS))
+        self.protocol("WM_DELETE_WINDOW", self.on_closing)
+        self.bind("<Return>", self.search)
 
-root.update() # For the width to get updated
-frame = Frame(root,bg='orange',width=50,height=root.winfo_height())
-frame.grid(row=0,column=0) 
+        if sys.platform == "darwin":
+            self.bind("<Command-q>", self.on_closing)
+            self.bind("<Command-w>", self.on_closing)
 
-# Make the buttons with the icons to be shown
-home_b = Button(frame,image=home,bg='orange',relief='flat')
-set_b = Button(frame,image=settings,bg='orange',relief='flat')
-ring_b = Button(frame,image=ring,bg='orange',relief='flat')
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_columnconfigure(1, weight=0)
+        self.grid_columnconfigure(2, weight=0)
+        self.grid_rowconfigure(1, weight=1)
 
-# Put them on the frame
-home_b.grid(row=0,column=0,pady=10)
-set_b.grid(row=1,column=0,pady=50)
-ring_b.grid(row=2,column=0)
+        self.search_bar = tkinter.Entry(self, width=50)
+        self.search_bar.grid(row=0, column=0, pady=10, padx=10, sticky="we")
+        self.search_bar.focus()
 
-# Bind to the frame, if entered or left
-frame.bind('<Enter>',lambda e: expand())
-frame.bind('<Leave>',lambda e: contract())
+        self.search_bar_button = tkinter.Button(master=self, width=8, text="Search", command=self.search)
+        self.search_bar_button.grid(row=0, column=1, pady=10, padx=10)
 
-# So that it does not depend on the widgets inside the frame
-frame.grid_propagate(False)
+        self.search_bar_clear = tkinter.Button(master=self, width=8, text="Clear", command=self.clear)
+        self.search_bar_clear.grid(row=0, column=2, pady=10, padx=10)
 
-root.mainloop()
+        self.map_widget = TkinterMapView(width=self.WIDTH, height=600, corner_radius=0)
+        self.map_widget.grid(row=1, column=0, columnspan=3, sticky="nsew")
+
+        self.marker_list_box = tkinter.Listbox(self, height=8)
+        self.marker_list_box.grid(row=2, column=0, columnspan=1, sticky="ew", padx=10, pady=10)
+
+        self.listbox_button_frame = tkinter.Frame(master=self)
+        self.listbox_button_frame.grid(row=2, column=1, sticky="nsew", columnspan=2)
+
+        self.listbox_button_frame.grid_columnconfigure(0, weight=1)
+
+        self.save_marker_button = tkinter.Button(master=self.listbox_button_frame, width=20, text="save current marker",
+                                                 command=self.save_marker)
+        self.save_marker_button.grid(row=0, column=0, pady=10, padx=10)
+
+        self.clear_marker_button = tkinter.Button(master=self.listbox_button_frame, width=20, text="clear marker list",
+                                                  command=self.clear_marker_list)
+        self.clear_marker_button.grid(row=1, column=0, pady=10, padx=10)
+
+        self.connect_marker_button = tkinter.Button(master=self.listbox_button_frame, width=20, text="connect marker with path",
+                                                    command=self.connect_marker)
+        self.connect_marker_button.grid(row=2, column=0, pady=10, padx=10)
+
+        self.map_widget.set_address("NYC")
+
+        self.marker_list = []
+        self.marker_path = None
+
+        self.search_marker = None
+        self.search_in_progress = False
+
+    def search(self, event=None):
+        if not self.search_in_progress:
+            self.search_in_progress = True
+            if self.search_marker not in self.marker_list:
+                self.map_widget.delete(self.search_marker)
+
+            address = self.search_bar.get()
+            self.search_marker = self.map_widget.set_address(address, marker=True)
+            if self.search_marker is False:
+                # address was invalid (return value is False)
+                self.search_marker = None
+            self.search_in_progress = False
+
+    def save_marker(self):
+        if self.search_marker is not None:
+            self.marker_list_box.insert(tkinter.END, f" {len(self.marker_list)}. {self.search_marker.text} ")
+            self.marker_list_box.see(tkinter.END)
+            self.marker_list.append(self.search_marker)
+
+    def clear_marker_list(self):
+        for marker in self.marker_list:
+            self.map_widget.delete(marker)
+
+        self.marker_list_box.delete(0, tkinter.END)
+        self.marker_list.clear()
+        self.connect_marker()
+
+    def connect_marker(self):
+        print(self.marker_list)
+        position_list = []
+
+        for marker in self.marker_list:
+            position_list.append(marker.position)
+
+        if self.marker_path is not None:
+            self.map_widget.delete(self.marker_path)
+
+        if len(position_list) > 0:
+            self.marker_path = self.map_widget.set_path(position_list)
+
+    def clear(self):
+        self.search_bar.delete(0, last=tkinter.END)
+        self.map_widget.delete(self.search_marker)
+
+    def on_closing(self, event=0):
+        self.destroy()
+        exit()
+
+    def start(self):
+        self.mainloop()
+
+
+if __name__ == "__main__":
+    app = App()
+    app.start()
