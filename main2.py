@@ -45,7 +45,7 @@ class App(customtkinter.CTk):
 
         # ============ frame_left ============
 
-        self.frame_left.grid_rowconfigure(3, weight=1)
+        self.frame_left.grid_rowconfigure(4, weight=1)
 
         self.button_1 = customtkinter.CTkButton(master=self.frame_left,
                                                 text="Set Marker",
@@ -62,19 +62,24 @@ class App(customtkinter.CTk):
                                                 command=self.open_camera)
         self.button_3.grid(pady=(20, 0), padx=(20, 20), row=2, column=0)
 
+        self.button_4 = customtkinter.CTkButton(master=self.frame_left,
+                                                text="Desativar Mapas",
+                                                command=self.destroy_maps)
+        self.button_4.grid(pady=(20, 0), padx=(20, 20), row=3, column=0)
+
         
 
         self.map_label = customtkinter.CTkLabel(self.frame_left, text="Servidor de Mapas:", anchor="w")
-        self.map_label.grid(row=4, column=0, padx=(20, 20), pady=(20, 0))
+        self.map_label.grid(row=5, column=0, padx=(20, 20), pady=(20, 0))
         self.map_option_menu = customtkinter.CTkOptionMenu(self.frame_left, values=["OpenStreetMap", "Google normal", "Google satellite"],
                                                                        command=self.change_map)
-        self.map_option_menu.grid(row=5, column=0, padx=(20, 20), pady=(10, 0))
+        self.map_option_menu.grid(row=6, column=0, padx=(20, 20), pady=(10, 0))
 
         self.appearance_mode_label = customtkinter.CTkLabel(self.frame_left, text="Aparência:", anchor="w")
-        self.appearance_mode_label.grid(row=6, column=0, padx=(20, 20), pady=(20, 0))
+        self.appearance_mode_label.grid(row=7, column=0, padx=(20, 20), pady=(20, 0))
         self.appearance_mode_optionemenu = customtkinter.CTkOptionMenu(self.frame_left, values=["Light", "Dark", "System"],
                                                                        command=self.change_appearance_mode)
-        self.appearance_mode_optionemenu.grid(row=7, column=0, padx=(20, 20), pady=(10, 20))
+        self.appearance_mode_optionemenu.grid(row=8, column=0, padx=(20, 20), pady=(10, 20))
 
         # ============ frame_right ============
 
@@ -83,6 +88,7 @@ class App(customtkinter.CTk):
         self.frame_right.grid_columnconfigure(0, weight=1)
         self.frame_right.grid_columnconfigure(1, weight=0)
         self.frame_right.grid_columnconfigure(2, weight=1)
+        
 
         self.map_widget = TkinterMapView(self.frame_right, corner_radius=0)
         self.map_widget.grid(row=1, rowspan=1, column=0, columnspan=3, sticky="nswe", padx=(0, 0), pady=(0, 0))
@@ -110,7 +116,7 @@ class App(customtkinter.CTk):
         # Create a label and display it on app
         self.text_var = tkinter.StringVar(value="")
         self.label_widget = customtkinter.CTkLabel(self,textvariable=self.text_var)
-        self.label_widget.grid(row=0,column=3,sticky="nsew",rowspan=1)
+        self.label_widget.grid(row=0,column=2,sticky="nsew",rowspan=1,columnspan=3)
 
 
         # Set default values
@@ -120,15 +126,46 @@ class App(customtkinter.CTk):
         self.map_option_menu.set("Google normal")
         self.appearance_mode_optionemenu.set("Dark")
 
+    def destroy_maps(self):
+        self.map_widget.destroy() #Deleta o mapa
+        self.entry.destroy() #Deleta a pesquisa
+        self.button_5.destroy() #Deleta o botão de pesquisa
+        self.button_4.configure(command=self.open_maps,text="Ativar Mapas") #Configura o botão para ativar os mapas novamente
+        #self.frame_right.grid_columnconfigure(3, weight=2) #Configura o grid para que o label da câmera ocupe todo o espaço
+        self.label_widget.grid(row=0, rowspan=1, column=1, columnspan=3, sticky="nswe") #Coloco a câmera no centro
+
+        
+
+    def open_maps(self):
+        self.label_widget.grid(row=0, rowspan=1, column=2, columnspan=3, sticky="nswe") #Câmera no canto
+        self.map_widget = TkinterMapView(self.frame_right, corner_radius=0)
+        self.map_widget.grid(row=1, rowspan=1, column=0, columnspan=3, sticky="nswe", padx=(0, 0), pady=(0, 0))
+        self.map_widget.set_overlay_tile_server("http://tiles.openseamap.org/seamark//{z}/{x}/{y}.png")
+        self.entry = customtkinter.CTkEntry(master=self.frame_right,
+                                            placeholder_text="type address")
+        self.entry.grid(row=0, column=0, sticky="we", padx=(12, 0), pady=12)
+        self.entry.bind("<Return>", self.search_event)
+
+        self.button_5 = customtkinter.CTkButton(master=self.frame_right,
+                                                text="Search",
+                                                width=90,
+                                                command=self.search_event)
+        self.button_5.grid(row=0, column=1, sticky="w", padx=(12, 0), pady=12)
+        self.button_4.configure(command=self.destroy_maps,text="Desativar Mapas")
+
     def destroy_camera(self):
         self.label_widget.destroy() #Destruo o label da câmera
+        self.button_3.configure(command=self.destroy_camera,text="Câmera")
         #Crio o label de novo
         self.label_widget = customtkinter.CTkLabel(self,textvariable=self.text_var)
-        self.label_widget.grid(row=0,column=3,sticky="nsew",rowspan=1)
+        if (self.map_widget.winfo_exists() == 1): #Checa se o mapa está ativo
+            self.label_widget.grid(row=0, rowspan=1, column=2, columnspan=3, sticky="nswe")
+        else:
+            self.label_widget.grid(row=0, rowspan=1, column=1, columnspan=3, sticky="nswe")
         self.button_3.configure(command=self.open_camera) #Configuro para abrir a câmera novamente
 
     def open_camera(self):
-            self.button_3.configure(command=self.destroy_camera) #Coloco o botão para tirar a câmera
+            self.button_3.configure(command=self.destroy_camera,text="Desativar Câmera") #Coloco o botão para tirar a câmera
   
             # Capture the video frame by frame
             _, frame = self.vid.read()
