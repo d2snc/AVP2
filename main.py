@@ -2,16 +2,69 @@ from tkinter import *
 from PIL import Image, ImageTk
 import tkinter
 import tkintermapview
+import cv2
 
+#Setup da GUI
 root = Tk()
-root.geometry('800x600')
+root.geometry('1700x1500')
 root.title("AVP-MOOS v0.1")
 root.configure(bg='#01386a')
 root.rowconfigure(0, weight=1) #Configuração para expandir o widget do mapa - Mudar se colocar mais coisa
 root.columnconfigure(1, weight=2)
 
+#CV2 para video
+
+# Define a video capture object
+vid = cv2.VideoCapture(0) #imagem da webcam
+vid = cv2.VideoCapture('teste.mp4') #abre arquivo mp4
+  
+# Declare the width and height in variables
+width, height = 800, 600
+  
+# Set the width and height
+vid.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+vid.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+  
+  
+# Create a label and display it on app
+label_widget = Label(root)
+label_widget.grid(row=0,column=2,sticky="nsew")
+  
+# Create a function to open camera and
+# display it in the label_widget on app
+  
+  
+def open_camera():
+  
+    # Capture the video frame by frame
+    _, frame = vid.read()
+  
+    # Convert image from one color space to other
+    opencv_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
+  
+    # Capture the latest frame and transform to image
+    captured_image = Image.fromarray(opencv_image)
+  
+    # Convert captured image to photoimage
+    photo_image = ImageTk.PhotoImage(image=captured_image)
+  
+    # Displaying photoimage in the label
+    label_widget.photo_image = photo_image
+  
+    # Configure image in the label
+    label_widget.configure(image=photo_image)
+  
+    # Repeat the same process after every 10 seconds
+    label_widget.after(10, open_camera)
+  
+  
+# Create a button to open the camera in GUI app
+button1 = Button(root, text="Abrir Câmera", command=open_camera)
+button1.grid(row=1,column=2,sticky="n")
 
 
+
+#Configs do menu lateral
 
 min_w = 50 # Minimum width of the frame
 max_w = 200 # Maximum width of the frame
@@ -79,7 +132,7 @@ frame.grid_propagate(False)
 # create map widget
 map_widget = tkintermapview.TkinterMapView(root, width=800, height=600, corner_radius=0)
 map_widget.place(relx=0.5, rely=0.5, anchor=tkinter.CENTER)
-map_widget.grid(row=0,column=1,sticky="nsew") #Posição na grid do widget do mapa
+map_widget.grid(row=0,column=1,sticky="nsew",rowspan=3) #Posição na grid do widget do mapa
 #map_widget.pack(fill="both", expand=True)
 map_widget.set_position(-22.911663710002028, -43.15942144574782)
 map_widget.set_zoom(15)
