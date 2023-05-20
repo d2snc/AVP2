@@ -6,6 +6,7 @@ from PIL import Image, ImageTk
 
 
 customtkinter.set_default_color_theme("blue")
+customtkinter.set_appearance_mode("Dark")
 
 
 class App(customtkinter.CTk):
@@ -89,6 +90,7 @@ class App(customtkinter.CTk):
         self.frame_right.grid_columnconfigure(1, weight=0)
         self.frame_right.grid_columnconfigure(2, weight=1)
         
+        
 
         self.map_widget = TkinterMapView(self.frame_right, corner_radius=0)
         self.map_widget.grid(row=1, rowspan=1, column=0, columnspan=3, sticky="nswe", padx=(0, 0), pady=(0, 0))
@@ -126,6 +128,86 @@ class App(customtkinter.CTk):
         self.map_option_menu.set("Google normal")
         self.appearance_mode_optionemenu.set("Dark")
 
+        #Frame com slider para controle de velocidade   
+        
+
+        # create slider and progressbar frame
+        self.slider_progressbar_frame = customtkinter.CTkFrame(self, fg_color="transparent",width=200,height=200)
+        self.slider_progressbar_frame.grid(row=0, column=5, padx=(20, 0), pady=(90, 0), sticky="nsew") #Mexer no pady se quiser abaixar mais o frame
+        self.slider_progressbar_frame.grid_columnconfigure(0, weight=1)
+        self.slider_progressbar_frame.grid_rowconfigure(5, weight=0)
+        self.slider_progressbar_frame.grid_rowconfigure(6, weight=2)
+        self.slider_progressbar_frame.grid_rowconfigure(1, weight=1)
+        
+        #Label do Controle Remoto
+        self.label_machine = customtkinter.CTkLabel(master=self.slider_progressbar_frame, text="Controle Remoto")
+        self.label_machine.configure(font=("Segoe UI", 30))
+        self.label_machine.grid(row=0, column=0, columnspan=1, padx=(10,0), pady=(10,30), sticky="")
+
+        #Label do Leme
+        self.label_machine = customtkinter.CTkLabel(master=self.slider_progressbar_frame, text="Leme")
+        self.label_machine.configure(font=("Segoe UI", 20))
+        self.label_machine.grid(row=3, column=0, columnspan=1, padx=(10,0), pady=(10,20), sticky="")
+
+        #Label das Máquinas
+        
+        self.label_machine = customtkinter.CTkLabel(master=self.slider_progressbar_frame, text="Máquinas")
+        self.label_machine.configure(font=("Segoe UI", 20))
+        self.label_machine.grid(row=1, column=0, columnspan=1, padx=(190,0), pady=(20,20), sticky="")
+
+        self.progressbar_2 = customtkinter.CTkProgressBar(self.slider_progressbar_frame,width=300)
+        self.progressbar_2.grid(row=5, column=0, padx=(20, 10), pady=(0, 0),sticky="nsew")
+        
+        self.slider_1 = customtkinter.CTkSlider(self.slider_progressbar_frame, from_=-30, to=30, number_of_steps=60)
+        self.slider_1.grid(row=4, column=0, padx=(20, 10), pady=(15, 15), sticky="ew")
+        self.slider_2 = customtkinter.CTkSlider(self.slider_progressbar_frame, from_=0, to=1, number_of_steps=100, orientation="vertical",height=400)
+        self.slider_2.grid(row=0, column=1, rowspan=5, padx=(10, 15), pady=(20, 10))
+        self.slider_2.set(0) #Zero o slider de máquinas
+        self.progressbar_3 = customtkinter.CTkProgressBar(self.slider_progressbar_frame, orientation="vertical",height=400)
+        self.progressbar_3.grid(row=0, column=2, rowspan=5, padx=(10, 20), pady=(20, 10))
+
+        #Configurando a barra de progresso
+        self.slider_1.configure(command=self.update_value_leme) #Configurei o slider para setar a barra de progresso
+        self.progressbar_3.set(self.slider_2.get())
+        self.slider_2.configure(command=self.update_value_maquinas)
+
+        #Porcentagem de Máquinas 
+        self.label_machine = customtkinter.CTkLabel(master=self.slider_progressbar_frame, text=str(int(self.slider_2.get()*100))+"%")
+        self.label_machine.configure(font=("Segoe UI", 15))
+        self.label_machine.grid(row=0, column=2, columnspan=1, padx=(5,15), pady=(5,5), sticky="n")
+
+        #Angulo do Leme
+        self.label_leme = customtkinter.CTkLabel(master=self.slider_progressbar_frame, text=str(int(self.slider_1.get()))+"°")
+        self.label_leme.configure(font=("Segoe UI", 25))
+        self.label_leme.grid(row=6, column=0, columnspan=2,rowspan=1, padx=(5,10), pady=(0,10), sticky="s")
+
+        #Escolha de modo de controle remoto
+        
+        #Texto
+        self.label_controle = customtkinter.CTkLabel(master=self.slider_progressbar_frame, text="Modo de controle")
+        self.label_controle.configure(font=("Segoe UI", 25))
+        self.label_controle.grid(row=9, column=0, rowspan=1, columnspan=2, padx=(5,10), pady=(60,15), sticky="")
+        
+        #Menu para escolha
+        self.combobox = customtkinter.CTkOptionMenu(master=self.slider_progressbar_frame,
+                                       values=["Manual", "Teclado", "Joystick"],
+                                       command=self.optionmenu_callback)
+        self.combobox.grid(row=10, column=0, rowspan=1,columnspan=2, padx=(5,10), pady=(0,205), sticky="")
+
+    def optionmenu_callback(self,choice):
+        print("optionmenu dropdown clicked:", choice)
+
+    def update_value_maquinas(self,other):
+        print(other)
+        self.progressbar_3.set(self.slider_2.get())
+        self.label_machine.configure(text=str(int(self.slider_2.get()*100))+"%")
+
+    def update_value_leme(self,other):
+        print(other)
+        self.progressbar_2.set(self.slider_1.get())
+        self.label_leme.configure(text=str(int(self.slider_1.get()))+"°")
+        
+
     def destroy_maps(self):
         self.map_widget.destroy() #Deleta o mapa
         self.entry.destroy() #Deleta a pesquisa
@@ -141,6 +223,8 @@ class App(customtkinter.CTk):
         self.map_widget = TkinterMapView(self.frame_right, corner_radius=0)
         self.map_widget.grid(row=1, rowspan=1, column=0, columnspan=3, sticky="nswe", padx=(0, 0), pady=(0, 0))
         self.map_widget.set_overlay_tile_server("http://tiles.openseamap.org/seamark//{z}/{x}/{y}.png")
+        self.map_widget.set_position(-22.911663710002028, -43.15942144574782) #Posição inicial do mapa
+        self.map_widget.set_zoom(15) 
         self.entry = customtkinter.CTkEntry(master=self.frame_right,
                                             placeholder_text="type address")
         self.entry.grid(row=0, column=0, sticky="we", padx=(12, 0), pady=12)
